@@ -4,6 +4,8 @@ namespace server.Data
 {
     public interface IServerRepository
     {
-        Task<bool> CreateServer(Server server);
+        Task CreateServerMappingAsync(Server server);
+        Task DeleteServerMappingAsync(string serverId);
+        Task<string?> GetServerIdByGameCodeAsync(string gameCode);
     }
 }
