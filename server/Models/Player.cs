@@ -4,7 +4,7 @@ namespace server.Models
 {
     public class Player
     {
-        public Guid Id { get; set; } = new Guid();
+        public Guid Id { get; set; } = Guid.NewGuid();
 
         public required string SocketId { get; set; }
 

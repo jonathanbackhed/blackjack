@@ -2,10 +2,10 @@
 {
     public enum PlayerAction
     {
-        Join,
         Hit,
         Stand,
         Double,
+        Split,
         Leave
     }
 }

@@ -6,7 +6,7 @@ namespace server.Models
     public class Server
     {
         [Key]
-        public int Id { get; set; }
+        public Guid Id { get; set; } = Guid.NewGuid();
 
         [Required]
         [MaxLength(8)]

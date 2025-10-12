@@ -6,7 +6,7 @@
 
         public required string Name { get; set; }
 
-        public List<Card> Cards { get; set; }
+        public required List<Card> Cards { get; set; }
 
         public int HandValue { get; set; }
 
