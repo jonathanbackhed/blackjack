@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using server.Data;
 using server.Hubs;
-using server.Models.Dbc;
+using server.Models.Database;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,7 +21,10 @@ var connString = builder.Configuration.GetConnectionString("DefaultConnection")
 builder.Services.AddDbContext<BlackjackContext>(options =>
     options.UseNpgsql(connString));
 
-builder.Services.AddMemoryCache();
+builder.Services.AddMemoryCache(options =>
+{
+    options.SizeLimit = 10;
+});
 builder.Services.AddSingleton<IServerCache, ServerCache>();
 
 var clientUrl = builder.Configuration["Frontend"]

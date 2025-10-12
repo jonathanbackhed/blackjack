@@ -5,8 +5,9 @@ namespace server.Data
     public interface IServerCache
     {
         void CreateServer(Server server);
-        void RemoveServer(string gameCode);
-        bool ServerExists(string gameCode);
-        Server? GetServer(string gameCode);
+        void DeleteServer(string serverId);
+        bool ServerExists(string serverId);
+        Server? GetServer(string serverId);
+        void UpdateServer(Server server);
     }
 }

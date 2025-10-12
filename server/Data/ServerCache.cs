@@ -5,37 +5,46 @@ namespace server.Data
 {
     public class ServerCache : IServerCache
     {
-        private MemoryCache _cache { get; set; }
+        private readonly IMemoryCache _cache;
 
-        public ServerCache()
+        public ServerCache(IMemoryCache cache)
         {
-            _cache = new MemoryCache(new MemoryCacheOptions { SizeLimit = 10});
+            _cache = cache;
         }
 
         public void CreateServer(Server server)
         {
             var cacheEntryOptions = new MemoryCacheEntryOptions().SetSize(1);
-            _cache.Set(server.GameCode, server, cacheEntryOptions);
+            _cache.Set(server.Id.ToString(), server, cacheEntryOptions);
         }
 
-        public void RemoveServer(string gameCode)
+        public void DeleteServer(string serverId)
         {
-            _cache.Remove(gameCode);
+            _cache.Remove(serverId);
         }
 
-        public bool ServerExists(string gameCode)
+        public bool ServerExists(string serverId)
         {
-            _cache.TryGetValue(gameCode, out Server? server);
+            _cache.TryGetValue(serverId, out Server? server);
             if (server is null)
                 return false;
 
             return true;
         }
 
-        public Server? GetServer(string gameCode)
+        public Server? GetServer(string serverId)
         {
-            _cache.TryGetValue(gameCode, out Server? server);
+            _cache.TryGetValue(serverId, out Server? server);
             return server;
+        }
+
+        public void UpdateServer(Server newServer)
+        {
+            _cache.TryGetValue(newServer.Id.ToString(), out Server? server);
+            if (server is not null)
+            {
+                _cache.Set(newServer.Id.ToString(), newServer);
+            }
         }
     }
 }

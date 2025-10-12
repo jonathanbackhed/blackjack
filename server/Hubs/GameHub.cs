@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.SignalR;
+using server.Data;
 using server.Helpers.Enums;
 using server.Models;
 using server.Models.Dto;
@@ -7,7 +8,13 @@ namespace server.Hubs
 {
     public class GameHub : Hub
     {
-        private static Dictionary<string, Server> _servers = new();
+        //private static Dictionary<string, Server> _servers = new();
+        private readonly IServerCache _serverCache;
+
+        public GameHub(IServerCache serverCache)
+        {
+            _serverCache = serverCache;
+        }
 
         public override async Task OnConnectedAsync()
         {
@@ -17,11 +24,11 @@ namespace server.Hubs
 
         public async Task JoinServer(string serverId, string playerName)
         {
-            // Should check if serverId exists, gameCode only for humans to join
-            // Rest request to check if server exists, return serverId, then call this endpoint
-            if (!_servers.ContainsKey(serverId)) return;
+            //if (!_servers.ContainsKey(serverId)) return;
+            if (!_serverCache.ServerExists(serverId)) return;
 
-            var server = _servers[serverId];
+            //var server = _servers[serverId];
+            var server = _serverCache.GetServer(serverId)!;
 
             var player = new Player()
             {
@@ -38,9 +45,11 @@ namespace server.Hubs
 
         public async Task PerformAction(ActionRequestDto request)
         {
-            if (!_servers.ContainsKey(request.ServerId)) return;
+            //if (!_servers.ContainsKey(request.ServerId)) return;
+            if (!_serverCache.ServerExists(request.ServerId)) return;
 
-            var server = _servers[request.ServerId];
+            //var server = _servers[request.ServerId];
+            var server = _serverCache.GetServer(request.ServerId)!;
             var player = server.Players.FirstOrDefault(p => p.Id.ToString() == request.PlayerId);
             if (player is null) return;
 
