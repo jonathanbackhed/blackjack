@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace server.Models.Dbc
+namespace server.Models.Database
 {
     public class BlackjackContext : DbContext
     {
@@ -8,6 +8,6 @@ namespace server.Models.Dbc
         {
         }
 
-        public DbSet<Server> Servers { get; set; }
+        public DbSet<ServerMapping> ServerMappings { get; set; }
     }
 }
