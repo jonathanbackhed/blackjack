@@ -27,7 +27,7 @@ namespace server.Controllers
                 MaxPlayerCount = 3
             };
 
-            while (_serverCache.ServerExists(server.GameCode))
+            while (await _serverRepository.GetServerIdByGameCodeAsync(server.GameCode) != null)
             {
                 server.GameCode = GenerateCode.GenerateGameCode();
             }

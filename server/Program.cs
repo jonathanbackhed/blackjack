@@ -34,6 +34,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("CorsPolicy", b =>
         b.AllowAnyMethod()
             .AllowAnyHeader()
+            .AllowCredentials()
             .WithOrigins(clientUrl)));
 
 var app = builder.Build();
@@ -60,6 +61,6 @@ app.UseRouting();
 
 app.MapControllers();
 
-app.MapHub<GameHub>("/game");
+app.MapHub<GameHub>("/gamehub");
 
 app.Run();

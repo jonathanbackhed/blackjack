@@ -8,7 +8,6 @@ namespace server.Hubs
 {
     public class GameHub : Hub
     {
-        //private static Dictionary<string, Server> _servers = new();
         private readonly IServerCache _serverCache;
 
         public GameHub(IServerCache serverCache)
@@ -24,11 +23,10 @@ namespace server.Hubs
 
         public async Task JoinServer(string serverId, string playerName)
         {
-            //if (!_servers.ContainsKey(serverId)) return;
-            if (!_serverCache.ServerExists(serverId)) return;
+            var server = _serverCache.GetServer(serverId);
+            if (server is null) return;
 
-            //var server = _servers[serverId];
-            var server = _serverCache.GetServer(serverId)!;
+            if (server.Players.Any(p => p.SocketId == Context.ConnectionId)) return;
 
             var player = new Player()
             {
@@ -45,11 +43,9 @@ namespace server.Hubs
 
         public async Task PerformAction(ActionRequestDto request)
         {
-            //if (!_servers.ContainsKey(request.ServerId)) return;
-            if (!_serverCache.ServerExists(request.ServerId)) return;
+            var server = _serverCache.GetServer(request.ServerId);
+            if (server is null) return;
 
-            //var server = _servers[request.ServerId];
-            var server = _serverCache.GetServer(request.ServerId)!;
             var player = server.Players.FirstOrDefault(p => p.Id.ToString() == request.PlayerId);
             if (player is null) return;
 
