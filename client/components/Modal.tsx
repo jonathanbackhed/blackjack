@@ -1,8 +1,9 @@
 "use client";
 
-import { useSettingsStore } from "@/lib/hooks/useSettingsStore";
+import { useSettingsStore } from "@/hooks/useSettingsStore";
+import isUsernameValid from "@/utils/validateUsername";
 import { X } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 interface Props {
   show: boolean;
@@ -10,10 +11,10 @@ interface Props {
 }
 
 export default function Modal({ show, close }: Props) {
-  const [username, setUsername] = useState("");
-  const [showError, setShowError] = useState(false);
+  const { username: currentUsername, setUsername: saveName } = useSettingsStore();
 
-  const { setUsername: saveName } = useSettingsStore();
+  const [username, setUsername] = useState(currentUsername || "");
+  const [showError, setShowError] = useState(false);
 
   const handleSubmit = (e: any) => {
     e.preventDefault();
@@ -26,17 +27,26 @@ export default function Modal({ show, close }: Props) {
     }
   };
 
+  useEffect(() => {
+    if (show === true) {
+      setUsername(currentUsername || "");
+      setShowError(false);
+    }
+  }, [show]);
+
   return (
     <div
       className={`${show ? "flex" : "hidden"} absolute top-0 left-0 z-40 h-screen w-screen items-center justify-center bg-black/60 backdrop-blur-sm`}
     >
       <div className={`bg-b relative flex flex-col items-center rounded-2xl p-8 ${showError && "pb-4"} font-mono`}>
-        <button
-          onClick={() => close()}
-          className="hover:bg-b-dark absolute top-1.5 right-1.5 rounded-full p-1 hover:cursor-pointer"
-        >
-          <X size={20} />
-        </button>
+        {isUsernameValid(currentUsername) && (
+          <button
+            onClick={() => close()}
+            className="hover:bg-b-dark absolute top-1.5 right-1.5 rounded-full p-1 hover:cursor-pointer"
+          >
+            <X size={20} />
+          </button>
+        )}
         <h2 className="text-t mb-2 text-xl">Set your name</h2>
         <form onSubmit={handleSubmit}>
           <input

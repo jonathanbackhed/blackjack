@@ -1,22 +1,22 @@
 @import "tailwindcss";
 
 :root {
-  --bg-dark: oklch(0.92 0 264);
-  --bg: oklch(0.96 0 264);
-  --bg-light: oklch(1 0 264);
+  --bg-dark: oklch(0.92 0 000);
+  --bg: oklch(0.96 0 000);
+  --bg-light: oklch(1 0 000);
 
-  --text: oklch(0.15 0 264);
-  --text-muted: oklch(0.4 0 264);
+  --text: oklch(0.15 0 000);
+  --text-muted: oklch(0.4 0 000);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg-dark: oklch(0.1 0 264);
-    --bg: oklch(0.2 0 264);
-    --bg-light: oklch(0.3 0 264);
+    --bg-dark: oklch(0.1 0 000);
+    --bg: oklch(0.2 0 000);
+    --bg-light: oklch(0.3 0 000);
 
-    --text: oklch(0.96 0 264);
-    --text-muted: oklch(0.76 0 264);
+    --text: oklch(0.96 0 000);
+    --text-muted: oklch(0.76 0 000);
   }
 }
 
@@ -25,9 +25,9 @@
   --shadow-c-md: inset 0 1px 2px #ffffff50, 0 2px 4px #00000030, 0 4px 8px #00000015;
   --shadow-c-lg: inset 0 1px 2px #ffffff70, 0 4px 6px #00000030, 0 6px 10px #00000015;
 
-  --inset-shadow-c-sm: inset 0 1px 2px #ffffff30, inset 0 1px 2px #00000030, inset 0 2px 4px #00000015;
-  --inset-shadow-c-md: inset 0 1px 2px #ffffff50, inset 0 2px 4px #00000030, inset 0 4px 8px #00000015;
-  --inset-shadow-c-lg: inset 0 1px 2px #ffffff70, inset 0 4px 6px #00000030, inset 0 6px 10px #00000015;
+  --inset-shadow-c-sm: 0 1px 2px #ffffff30, inset 0 1px 2px #00000030, inset 0 2px 4px #00000015;
+  --inset-shadow-c-md: 0 1px 2px #ffffff50, inset 0 2px 4px #00000030, inset 0 4px 8px #00000015;
+  --inset-shadow-c-lg: 0 1px 2px #ffffff70, inset 0 4px 6px #00000030, inset 0 6px 10px #00000015;
 
   --animate-slide-in-top: slide-in-top 5s ease-in-out both;
 
