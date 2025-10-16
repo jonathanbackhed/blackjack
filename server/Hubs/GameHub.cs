@@ -21,12 +21,26 @@ namespace server.Hubs
             await base.OnConnectedAsync();
         }
 
+        public override async Task OnDisconnectedAsync(Exception? exception)
+        {
+            Console.WriteLine($"Client disconnect: {Context.ConnectionId}");
+            await base.OnDisconnectedAsync(exception);
+        }
+
         public async Task JoinServer(string serverId, string playerName)
         {
             var server = _serverCache.GetServer(serverId);
-            if (server is null) return;
+            if (server is null)
+            {
+                Console.WriteLine("Server is null");
+                return;
+            }
 
-            if (server.Players.Any(p => p.SocketId == Context.ConnectionId)) return;
+            if (server.Players.Any(p => p.SocketId == Context.ConnectionId))
+            {
+                Console.WriteLine("User already connected to server");
+                return;
+            }
 
             var player = new Player()
             {
@@ -39,6 +53,33 @@ namespace server.Hubs
             await Groups.AddToGroupAsync(Context.ConnectionId, serverId);
 
             await Clients.Group(serverId).SendAsync("GameUpdate", MapToServerResponse(server));
+
+            Console.WriteLine($"Player joined the game: {Context.ConnectionId}");
+        }
+
+        public async Task LeaveServer(string serverId)
+        {
+            var server = _serverCache.GetServer(serverId);
+            if (server is null)
+            {
+                Console.WriteLine("Server is null");
+                return;
+            }
+
+            var player = server.Players.FirstOrDefault(p => p.SocketId == Context.ConnectionId);
+            if (player is null)
+            {
+                Console.WriteLine("User not connected to this server");
+                return;
+            }
+
+            server.RemovePlayer(player);
+
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, serverId);
+
+            await Clients.Group(serverId).SendAsync("GameUpdate", MapToServerResponse(server));
+
+            Console.WriteLine($"Player left the game: {Context.ConnectionId}");
         }
 
         public async Task PerformAction(ActionRequestDto request)
@@ -88,6 +129,9 @@ namespace server.Hubs
         private GameResponseDto MapToServerResponse(Server server)
         {
             var currentPlayer = server.Players.FirstOrDefault(p => !p.IsDealer && !p.IsStanding);
+            if (currentPlayer is null)
+                currentPlayer = server.Players.FirstOrDefault(p => p.IsDealer);
+
             return new GameResponseDto
             {
                 ServerId = server.Id.ToString(),

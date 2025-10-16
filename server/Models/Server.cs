@@ -38,6 +38,11 @@ namespace server.Models
                 Players.Add(player);
         }
 
+        public void RemovePlayer(Player player)
+        {
+            Players.Remove(player);
+        }
+
         public void StartGame()
         {
             if (Players.Count == 1) return;
