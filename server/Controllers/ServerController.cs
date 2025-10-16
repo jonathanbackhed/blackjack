@@ -21,8 +21,8 @@ namespace server.Controllers
         [HttpPost("create")]
         public async Task<IActionResult> CreateServer()
         {
-            var server = new Server 
-            { 
+            var server = new Server
+            {
                 GameCode = GenerateCode.GenerateGameCode(),
                 MaxPlayerCount = 3
             };
@@ -35,7 +35,7 @@ namespace server.Controllers
             _serverCache.CreateServer(server);
             await _serverRepository.CreateServerMappingAsync(server);
 
-            return Ok(server.GameCode);
+            return Ok(new { server.GameCode });
         }
 
         [HttpGet("getid/{gameCode}")]
@@ -44,7 +44,7 @@ namespace server.Controllers
             var serverId = await _serverRepository.GetServerIdByGameCodeAsync(gameCode);
             if (serverId is null) return BadRequest("Server not found!");
 
-            return Ok(serverId);
+            return Ok(new { serverId });
         }
 
         [HttpGet("get/{serverId}")]
