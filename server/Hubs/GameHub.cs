@@ -59,7 +59,7 @@ namespace server.Hubs
 
             await Clients.Group(serverId).SendAsync("GameUpdate", response);
 
-            Console.WriteLine($"Game starting...");
+            Console.WriteLine("Game starting...");
         }
 
         public async Task LeaveServer(string serverId)
@@ -80,7 +80,9 @@ namespace server.Hubs
 
         public async Task PerformAction(ActionRequestDto request)
         {
-            var response = await _gameService.PerformActionAsync(request, Context.ConnectionId);
+            var response = await _gameService.PerformActionAsync(request, Context.ConnectionId,
+                async dto => await Clients.Group(request.ServerId).SendAsync("GameUpdate", dto), 
+                CancellationToken.None);
             if (response is null)
             {
                 LogError("Failed to perform action", request.ServerId, Context.ConnectionId);

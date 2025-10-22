@@ -9,7 +9,7 @@
         public Deck()
         {
             var cards = new List<Card>();
-            var amountOfDecks = 1;
+            var amountOfDecks = 6;
             for (int i = 0; i < amountOfDecks; i++)
             {
                 cards.AddRange(GetFullDeck());
@@ -21,7 +21,9 @@
 
         public Card DrawCard() => _cards.Pop();
 
-        private List<Card> GetFullDeck()
+        public int CardCount() => _cards.Count;
+
+        private List<Card> GetFullDeck() // 52 cards
         {
             var cards = new List<Card>();
 

@@ -1,5 +1,7 @@
-﻿using server.Data;
+﻿using Microsoft.AspNetCore.SignalR;
+using server.Data;
 using server.Helpers.Enums;
+using server.Hubs;
 using server.Models;
 using server.Models.Dto;
 
@@ -8,6 +10,7 @@ namespace server.Services
     public class GameService : IGameService
     {
         private readonly IServerCache _serverCache;
+        private readonly int _msDelay = 2000;
 
         public GameService(IServerCache serverCache)
         {
@@ -63,7 +66,7 @@ namespace server.Services
             return MapToServerResponse(server);
         }
 
-        public async Task<GameResponseDto?> PerformActionAsync(ActionRequestDto request, string socketId)
+        public async Task<GameResponseDto?> PerformActionAsync(ActionRequestDto request, string socketId, Func<GameResponseDto, Task>? reportProgress = null, CancellationToken ct = default)
         {
             var server = _serverCache.GetServer(request.ServerId);
             if (server is null)
@@ -109,7 +112,18 @@ namespace server.Services
 
             if (server.Players.Where(p => !p.IsDealer).All(p => p.IsStanding))
             {
-                server.DealerTurn();
+                var dealer = server.Players.FirstOrDefault(p => p.IsDealer);
+                if (dealer is null) return null;
+
+                while (dealer.Hand.GetValue() < 17)
+                {
+                    dealer.Hand.Cards.Add(server.Deck.DrawCard());
+                    if (reportProgress is not null)
+                        await reportProgress(MapToServerResponse(server));
+
+                    await Task.Delay(_msDelay, ct);
+                }
+
                 var winner = server.DetermineWinner();
                 var finished = MapToServerResponse(server);
                 finished.Status = ServerStatus.Finished;
@@ -136,7 +150,19 @@ namespace server.Services
                 return null;
             }
 
-            server.StartGame();
+            if (!server.IsStarted)
+            {
+                server.StartGame();
+            }
+            else if (server.IsStarted && server.Status == ServerStatus.InProgress)
+            {
+                Console.WriteLine("Round in progress");
+                return null;
+            }
+            else if (server.IsStarted && server.Status == ServerStatus.Finished)
+            {
+                server.NewRound();
+            }
 
             return MapToServerResponse(server);
         }
