@@ -3,181 +3,100 @@ using server.Data;
 using server.Helpers.Enums;
 using server.Models;
 using server.Models.Dto;
+using server.Services;
 
 namespace server.Hubs
 {
     public class GameHub : Hub
     {
         private readonly IServerCache _serverCache;
+        private readonly IGameService _gameService;
 
-        public GameHub(IServerCache serverCache)
+        public GameHub(IServerCache serverCache, IGameService gameService)
         {
             _serverCache = serverCache;
+            _gameService = gameService;
         }
 
         public override async Task OnConnectedAsync()
         {
-            var c = Context;
             Console.WriteLine($"Client connected: {Context.ConnectionId}");
             await base.OnConnectedAsync();
         }
 
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
-            var c = Context;
             Console.WriteLine($"Client disconnect: {Context.ConnectionId}");
             await base.OnDisconnectedAsync(exception);
         }
 
         public async Task JoinServer(string serverId, string playerName)
         {
-            var server = _serverCache.GetServer(serverId);
-            if (server is null)
+            var (playerId, response) = await _gameService.JoinServerAsync(serverId, playerName, Context.ConnectionId);
+            if (playerId is null || response is null)
             {
-                Console.WriteLine("Server is null");
+                LogError("Failed to join server", serverId, Context.ConnectionId);
                 return;
             }
-
-            if (server.Players.Any(p => p.SocketId == Context.ConnectionId))
-            {
-                Console.WriteLine("User already connected to server");
-                return;
-            }
-
-            var player = new Player()
-            {
-                SocketId = Context.ConnectionId,
-                Name = playerName
-            };
-
-            server.AddPlayer(player);
 
             await Groups.AddToGroupAsync(Context.ConnectionId, serverId);
 
-            await Clients.Client(Context.ConnectionId).SendAsync("PlayerId", player.Id);
+            await Clients.Client(Context.ConnectionId).SendAsync("PlayerId", playerId);
 
-            await Clients.Group(serverId).SendAsync("GameUpdate", MapToServerResponse(server));
+            await Clients.Group(serverId).SendAsync("GameUpdate", response);
 
             Console.WriteLine($"Player joined the game: {Context.ConnectionId}");
         }
 
         public async Task StartGame(string serverId)
         {
-            var server = _serverCache.GetServer(serverId);
-            if (server is null)
+            var response = await _gameService.StartGameAsync(serverId, Context.ConnectionId);
+            if (response is null)
             {
-                Console.WriteLine("Server is null");
+                LogError("Failed to start game", serverId, Context.ConnectionId);
                 return;
             }
 
-            if (!server.Players.Any(p => p.SocketId == Context.ConnectionId))
-            {
-                Console.WriteLine("Player not in server");
-                return;
-            }
-
-            server.StartGame();
-
-            await Clients.Group(serverId).SendAsync("GameUpdate", MapToServerResponse(server));
+            await Clients.Group(serverId).SendAsync("GameUpdate", response);
 
             Console.WriteLine($"Game starting...");
         }
 
         public async Task LeaveServer(string serverId)
         {
-            var server = _serverCache.GetServer(serverId);
-            if (server is null)
+            var response = await _gameService.LeaveServerAsync(serverId, Context.ConnectionId);
+            if (response is null)
             {
-                Console.WriteLine("Server is null");
+                LogError("Failed to leave server", serverId, Context.ConnectionId);
                 return;
             }
-
-            var player = server.Players.FirstOrDefault(p => p.SocketId == Context.ConnectionId);
-            if (player is null)
-            {
-                Console.WriteLine("User not connected to this server");
-                return;
-            }
-
-            server.RemovePlayer(player);
 
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, serverId);
 
-            await Clients.Group(serverId).SendAsync("GameUpdate", MapToServerResponse(server));
+            await Clients.Group(serverId).SendAsync("GameUpdate", response);
 
             Console.WriteLine($"Player left the game: {Context.ConnectionId}");
         }
 
         public async Task PerformAction(ActionRequestDto request)
         {
-            var server = _serverCache.GetServer(request.ServerId);
-            if (server is null) return;
-
-            var player = server.Players.FirstOrDefault(p => p.Id.ToString() == request.PlayerId);
-            if (player is null) return;
-
-            if (player.SocketId.ToString() != Context.ConnectionId) return;
-
-            switch (request.Action)
+            var response = await _gameService.PerformActionAsync(request, Context.ConnectionId);
+            if (response is null)
             {
-                case PlayerAction.Hit:
-                    player.Hand.Cards.Add(server.Deck.DrawCard());
-                    if (player.Hand.IsBust)
-                        player.IsStanding = true;
-                    break;
-
-                case PlayerAction.Stand:
-                    player.IsStanding = true;
-                    break;
-
-                case PlayerAction.Double:
-                    throw new InvalidOperationException("Not implemented yet");
-                    break;
-
-                case PlayerAction.Leave:
-                    throw new InvalidOperationException("Not implemented yet");
-                    break;
-            }
-
-            if (server.Players.Where(p => !p.IsDealer).All(p => p.IsStanding))
-            {
-                server.DealerTurn();
-                var winner = server.DetermineWinner();
-                var finished = MapToServerResponse(server);
-                finished.Status = ServerStatus.Finished;
-                finished.Winner = winner;
-
-                await Clients.Group(request.ServerId).SendAsync("GameUpdate", finished);
+                LogError("Failed to perform action", request.ServerId, Context.ConnectionId);
                 return;
             }
 
-            await Clients.Group(request.ServerId).SendAsync("GameUpdate", MapToServerResponse(server));
+            await Clients.Group(request.ServerId).SendAsync("GameUpdate", response);
         }
 
-        private GameResponseDto MapToServerResponse(Server server)
+        private void LogError(string message, string serverId, string socketId)
         {
-            var currentPlayer = server.Players.FirstOrDefault(p => !p.IsDealer && !p.IsStanding);
-            if (currentPlayer is null)
-                currentPlayer = server.Players.FirstOrDefault(p => p.IsDealer);
-
-            return new GameResponseDto
-            {
-                ServerId = server.Id.ToString(),
-                Status = server.IsStarted ? ServerStatus.InProgress : ServerStatus.Waiting,
-                CurrentTurnPlayerId = currentPlayer!.Id.ToString(),
-                Players = server.Players.Select(p => new PlayerStateDto
-                {
-                    PlayerId = p.Id.ToString(),
-                    Name = p.Name,
-                    Cards = p.IsDealer && server.IsStarted && server.Players.Any(pl => !pl.IsStanding)
-                        ? new List<Card> { p.Hand.Cards.First(), new Card { Suit = "Hidden", Rank = "?" } }
-                        : p.Hand.Cards,
-                    HandValue = p.Hand.GetValue(),
-                    IsDealer = p.IsDealer,
-                    IsStanding = p.IsStanding,
-                    IsBust = p.Hand.IsBust
-                }).ToList()
-            };
+            Console.WriteLine("----------");
+            Console.WriteLine(message);
+            Console.WriteLine($"Server: {serverId}");
+            Console.WriteLine($"Player: {socketId}");
+            Console.WriteLine("----------");
         }
     }
 }

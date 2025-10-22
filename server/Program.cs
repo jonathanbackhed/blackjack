@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using server.Data;
 using server.Hubs;
 using server.Models.Database;
+using server.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +15,7 @@ builder.Services.AddSignalR();
 builder.Services.AddOpenApi();
 
 builder.Services.AddScoped<IServerRepository, ServerRepository>();
+builder.Services.AddScoped<IGameService, GameService>();
 
 var connString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
