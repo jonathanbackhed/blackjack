@@ -6,6 +6,7 @@ import { GameResponseDto } from "@/types/gameResponseDto";
 export function useSignalR(onMessage: (msg: GameResponseDto) => void) {
   const [connection, setConnection] = useState<HubConnection | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [playerId, setPlayerId] = useState<string | null>(null);
 
   const connect = async () => {
     if (connection && connection.state === HubConnectionState.Disconnected) {
@@ -25,6 +26,11 @@ export function useSignalR(onMessage: (msg: GameResponseDto) => void) {
 
     conn.on("GameUpdate", onMessage);
 
+    conn.on("PlayerId", (msg) => {
+      setPlayerId(msg);
+      console.log("PlayerID set to:", msg);
+    });
+
     return () => {
       conn.off("GameUpdate", onMessage);
       conn.stop();
@@ -37,5 +43,5 @@ export function useSignalR(onMessage: (msg: GameResponseDto) => void) {
     }
   }, [connection]);
 
-  return { connection, isConnected };
+  return { connection, isConnected, playerId };
 }

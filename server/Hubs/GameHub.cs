@@ -17,12 +17,14 @@ namespace server.Hubs
 
         public override async Task OnConnectedAsync()
         {
+            var c = Context;
             Console.WriteLine($"Client connected: {Context.ConnectionId}");
             await base.OnConnectedAsync();
         }
 
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
+            var c = Context;
             Console.WriteLine($"Client disconnect: {Context.ConnectionId}");
             await base.OnDisconnectedAsync(exception);
         }
@@ -52,9 +54,33 @@ namespace server.Hubs
 
             await Groups.AddToGroupAsync(Context.ConnectionId, serverId);
 
+            await Clients.Client(Context.ConnectionId).SendAsync("PlayerId", player.Id);
+
             await Clients.Group(serverId).SendAsync("GameUpdate", MapToServerResponse(server));
 
             Console.WriteLine($"Player joined the game: {Context.ConnectionId}");
+        }
+
+        public async Task StartGame(string serverId)
+        {
+            var server = _serverCache.GetServer(serverId);
+            if (server is null)
+            {
+                Console.WriteLine("Server is null");
+                return;
+            }
+
+            if (!server.Players.Any(p => p.SocketId == Context.ConnectionId))
+            {
+                Console.WriteLine("Player not in server");
+                return;
+            }
+
+            server.StartGame();
+
+            await Clients.Group(serverId).SendAsync("GameUpdate", MapToServerResponse(server));
+
+            Console.WriteLine($"Game starting...");
         }
 
         public async Task LeaveServer(string serverId)
@@ -89,6 +115,8 @@ namespace server.Hubs
 
             var player = server.Players.FirstOrDefault(p => p.Id.ToString() == request.PlayerId);
             if (player is null) return;
+
+            if (player.SocketId.ToString() != Context.ConnectionId) return;
 
             switch (request.Action)
             {

@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import { useSignalR } from "@/hooks/useSignalR";
 import { ArrowBigLeft } from "lucide-react";
 import { GameResponseDto } from "@/types/gameResponseDto";
+import { PlayerAction } from "@/types/playerAction";
+import { ActionRequestDto } from "@/types/actionRequestDto";
 
 interface Props {
   id: string;
@@ -14,9 +16,11 @@ interface Props {
 
 export default function GameBoard({ id }: Props) {
   const [serverId, setServerId] = useState<string | null>(null);
+  const [serverState, setServerState] = useState<GameResponseDto | null>(null);
 
-  const { connection, isConnected } = useSignalR((msg: GameResponseDto) => {
+  const { connection, isConnected, playerId } = useSignalR((msg: GameResponseDto) => {
     console.log("Game update received:", msg);
+    setServerState(msg);
   });
   const { username } = useSettingsStore();
   const router = useRouter();
@@ -56,6 +60,41 @@ export default function GameBoard({ id }: Props) {
     }
   };
 
+  const startGame = async () => {
+    if (connection && isConnected && serverId) {
+      try {
+        await connection.invoke("StartGame", serverId);
+        console.log("Invoked StartGame");
+      } catch (err) {
+        console.error("Error invoking StartGame: ", err);
+      }
+    } else {
+      console.warn("Connection or serverId not ready", connection, serverId);
+      console.warn("Connection:", connection);
+      console.warn("ServerId:", serverId);
+    }
+  };
+
+  const PerformAction = async (action: PlayerAction) => {
+    if (connection && isConnected && serverId && playerId) {
+      try {
+        const newAction: ActionRequestDto = {
+          serverId: serverId,
+          playerId: playerId,
+          action: action,
+        };
+        await connection.invoke("PerformAction", newAction);
+        console.log("Invoked PerformAction");
+      } catch (err) {
+        console.error("Error invoking PerformAction: ", err);
+      }
+    } else {
+      console.warn("Connection or serverId not ready", connection, serverId);
+      console.warn("Connection:", connection);
+      console.warn("ServerId:", serverId);
+    }
+  };
+
   useEffect(() => {
     if (isConnected) {
       (async () => {
@@ -70,6 +109,9 @@ export default function GameBoard({ id }: Props) {
   return (
     <div className="flex h-[1000px] w-[1400px] flex-col items-center justify-around bg-red-400">
       <h1 className="text-t text-center font-mono text-6xl">Game {id}</h1>
+      <button onClick={startGame} className="bg-b hover:bg-b-light rounded-2xl px-3 py-2 text-4xl">
+        Start game
+      </button>
       {/* GAMEBOARD */}
       <div className="h-[600px] w-full rounded-full bg-neutral-700">
         <div className="grid h-full w-full grid-cols-5 grid-rows-5 gap-4 bg-blue-500/50">
@@ -98,13 +140,19 @@ export default function GameBoard({ id }: Props) {
           </button>
         )}
         <button
-          onClick={() => console.log("HIT")}
-          className="inset-shadow-c-md hover:pointer-cursor rounded-2xl bg-green-500 px-3 py-2 hover:bg-green-400"
+          onClick={() => {
+            console.log("HIT");
+            PerformAction(PlayerAction.Hit);
+          }}
+          className="inset-shadow-c-md hover:pointer-cursor rounded-2xl bg-green-500 px-3 py-2 hover:bg-green-400 disabled:cursor-not-allowed disabled:opacity-60"
         >
           Hit
         </button>
         <button
-          onClick={() => console.log("STAND")}
+          onClick={() => {
+            console.log("STAND");
+            PerformAction(PlayerAction.Stand);
+          }}
           className="inset-shadow-c-md hover:pointer-cursor rounded-2xl bg-red-500 px-3 py-2 hover:bg-red-400"
         >
           Stand

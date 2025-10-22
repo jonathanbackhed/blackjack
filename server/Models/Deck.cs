@@ -9,8 +9,8 @@
         public Deck()
         {
             var cards = new List<Card>();
-
-            for (int i = 0; i < 1; i++)
+            var amountOfDecks = 1;
+            for (int i = 0; i < amountOfDecks; i++)
             {
                 cards.AddRange(GetFullDeck());
             }
