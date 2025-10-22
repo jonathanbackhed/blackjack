@@ -53,6 +53,11 @@ export default function Home() {
       <button onClick={joinGame} className="px-3 py-2 hover:cursor-pointer">
         Join
       </button>
+      {process.env.NODE_ENV === "development" && (
+        <button onClick={() => router.push(`/game/9QDtGDV5`)} className="px-3 py-2 hover:cursor-pointer">
+          Dev join
+        </button>
+      )}
     </div>
   );
 }
