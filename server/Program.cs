@@ -28,6 +28,7 @@ builder.Services.AddMemoryCache(options =>
     options.SizeLimit = 10;
 });
 builder.Services.AddSingleton<IServerCache, ServerCache>();
+builder.Services.AddSingleton<CacheInitializer>();
 
 var clientUrl = builder.Configuration["Frontend"]
     ?? throw new InvalidOperationException("Frontend url was not found");
@@ -51,6 +52,9 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    using var scope = app.Services.CreateScope();
+    var initCache = scope.ServiceProvider.GetRequiredService<CacheInitializer>();
+    initCache.Initialize();
 }
 
 app.UseHttpsRedirection();
