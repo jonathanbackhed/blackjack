@@ -12,7 +12,7 @@ namespace server.Models.Dto
 
         public required List<PlayerStateDto> Players { get; set; }
 
-        public required string CurrentTurnPlayerId { get; set; }
+        public string? CurrentTurnPlayerId { get; set; }
 
         public string? Winner { get; set; }
 

@@ -183,7 +183,7 @@ namespace server.Services
             {
                 ServerId = server.Id.ToString(),
                 Status = server.IsStarted ? ServerStatus.InProgress : ServerStatus.Waiting,
-                CurrentTurnPlayerId = currentPlayer!.Id.ToString(),
+                CurrentTurnPlayerId = currentPlayer?.Id.ToString(),
                 Players = server.Players.Select(p => new PlayerStateDto
                 {
                     PlayerId = p.Id.ToString(),
