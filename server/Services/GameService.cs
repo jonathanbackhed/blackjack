@@ -88,26 +88,32 @@ namespace server.Services
                 return null;
             }
 
-            switch (request.Action)
+            if (request.Action == PlayerAction.Stand)
             {
-                case PlayerAction.Hit:
-                    player.Hand.Cards.Add(server.Deck.DrawCard());
-                    if (player.Hand.IsBust)
-                        player.IsStanding = true;
-                    break;
+                player.IsStanding = true;
+            }
 
-                case PlayerAction.Stand:
-                    player.IsStanding = true;
-                    break;
+            var currentPlayerTurn = server.Players.FirstOrDefault(p => !p.IsDealer && !p.IsStanding);
 
-                case PlayerAction.Double:
-                    throw new InvalidOperationException("Not implemented yet");
+            if (currentPlayerTurn != null && currentPlayerTurn.SocketId.ToString() == socketId)
+            {
+                switch (request.Action)
+                {
+                    case PlayerAction.Hit:
+                        player.Hand.Cards.Add(server.Deck.DrawCard());
+                        if (player.Hand.IsBust)
+                            player.IsStanding = true;
+                        break;
 
-                case PlayerAction.Split:
-                    throw new InvalidOperationException("Not implemented yet");
+                    case PlayerAction.Double:
+                        throw new InvalidOperationException("Not implemented yet");
 
-                case PlayerAction.Leave:
-                    throw new InvalidOperationException("Not implemented yet");
+                    case PlayerAction.Split:
+                        throw new InvalidOperationException("Not implemented yet");
+
+                    case PlayerAction.Leave:
+                        throw new InvalidOperationException("Not implemented yet");
+                }
             }
 
             if (server.Players.Where(p => !p.IsDealer).All(p => p.IsStanding))
