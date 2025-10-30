@@ -188,10 +188,12 @@ namespace server.Services
                 {
                     PlayerId = p.Id.ToString(),
                     Name = p.Name,
-                    Cards = p.IsDealer && server.IsStarted && server.Players.Any(pl => !pl.IsStanding)
+                    Cards = p.IsDealer && server.IsStarted && server.Players.Where(pl => !pl.IsDealer).Any(pl => !pl.IsStanding)
                         ? new List<Card> { p.Hand.Cards.First(), new Card { Suit = "Hidden", Rank = "?" } }
                         : p.Hand.Cards,
-                    HandValue = p.Hand.GetValue(),
+                    HandValue = p.IsDealer && server.IsStarted && server.Players.Where(pl => !pl.IsDealer).Any(pl => !pl.IsStanding)
+                    ? p.Hand.Cards[0].Value
+                    : p.Hand.GetValue(),
                     IsDealer = p.IsDealer,
                     IsStanding = p.IsStanding,
                     IsBust = p.Hand.IsBust
