@@ -75,6 +75,7 @@ namespace server.Models
             foreach (var player in Players)
             {
                 player.Hand = new();
+                player.IsStanding = false;
                 player.Hand.Cards.Add(Deck.DrawCard());
             }
 
