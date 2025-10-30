@@ -4,6 +4,7 @@ using server.Helpers.Enums;
 using server.Models;
 using server.Models.Dto;
 using server.Services;
+using System.Collections.Concurrent;
 
 namespace server.Hubs
 {
@@ -11,6 +12,8 @@ namespace server.Hubs
     {
         private readonly IServerCache _serverCache;
         private readonly IGameService _gameService;
+
+        private static readonly ConcurrentDictionary<string, string> Connections = new();
 
         public GameHub(IServerCache serverCache, IGameService gameService)
         {
@@ -21,12 +24,22 @@ namespace server.Hubs
         public override async Task OnConnectedAsync()
         {
             Console.WriteLine($"Client connected: {Context.ConnectionId}");
+
             await base.OnConnectedAsync();
         }
 
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
             Console.WriteLine($"Client disconnect: {Context.ConnectionId}");
+
+            if (Connections.TryRemove(Context.ConnectionId, out var serverId))
+            {
+                if (!string.IsNullOrEmpty(serverId))
+                {
+                    await LeaveServer(serverId);
+                }
+            }
+
             await base.OnDisconnectedAsync(exception);
         }
 
@@ -38,6 +51,8 @@ namespace server.Hubs
                 LogError("Failed to join server", serverId, Context.ConnectionId);
                 return;
             }
+
+            Connections[Context.ConnectionId] = serverId;
 
             await Groups.AddToGroupAsync(Context.ConnectionId, serverId);
 
